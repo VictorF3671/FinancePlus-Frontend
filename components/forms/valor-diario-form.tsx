@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { formatDate, toUtcIso } from '@/lib/date';
 import { useAddValorDiario } from '@/lib/hooks/use-receitas';
 import { toast } from 'sonner';
+import { DialogClose } from '@radix-ui/react-dialog'
 
 const formSchema = z.object({
   data: z.date({ required_error: 'Data é obrigatória' }),
@@ -33,9 +34,10 @@ type FormValues = z.infer<typeof formSchema>;
 interface ValorDiarioFormProps {
   receitaId: number;
   onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
-export function ValorDiarioForm({ receitaId, onSuccess }: ValorDiarioFormProps) {
+export function ValorDiarioForm({ receitaId, onSuccess, onCancel }: ValorDiarioFormProps) {
   const addValorDiario = useAddValorDiario(receitaId);
 
   const form = useForm<FormValues>({
@@ -143,19 +145,22 @@ export function ValorDiarioForm({ receitaId, onSuccess }: ValorDiarioFormProps) 
         />
 
         <div className="flex justify-end gap-2">
+          <DialogClose asChild>
           <Button
             type="button"
             variant="outline"
             onClick={() =>
-              form.reset({
+            {form.reset({
                 observacao: '',
                 valor: undefined as unknown as number,
                 // data: undefined as unknown as Date
-              })
-            }
+              });  onCancel?.()
+            }}
           >
             Cancelar
           </Button>
+          </DialogClose>
+          
           <Button type="submit" disabled={addValorDiario.isPending}>
             {addValorDiario.isPending ? 'Registrando...' : 'Registrar Valor'}
           </Button>

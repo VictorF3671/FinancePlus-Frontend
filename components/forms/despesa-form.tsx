@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { formatDate, toUtcIso } from '@/lib/date';
 import { useAddDespesa } from '@/lib/hooks/use-receitas';
 import { toast } from 'sonner';
+import { DialogClose } from '@radix-ui/react-dialog';
 
 // Schema: usa undefined como vazio (sem null)
 const formSchema = z.object({
@@ -37,9 +38,10 @@ type FormValues = z.infer<typeof formSchema>;
 interface DespesaFormProps {
   receitaId: number;
   onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
-export function DespesaForm({ receitaId, onSuccess }: DespesaFormProps) {
+export function DespesaForm({ receitaId, onSuccess, onCancel }: DespesaFormProps) {
   const addDespesa = useAddDespesa(receitaId);
 
   const form = useForm<FormValues>({
@@ -150,20 +152,22 @@ export function DespesaForm({ receitaId, onSuccess }: DespesaFormProps) {
         />
 
         <div className="flex justify-end gap-2">
+          <DialogClose asChild>
           <Button
             type="button"
             variant="outline"
             onClick={() =>
-              form.reset({
+               {form.reset({
                 data: undefined,
                 descricao: '',
                 valor: undefined as unknown as number,
-              })
-            }
+              }); onCancel?.()
+            }}
             disabled={isSubmitting}
           >
             Cancelar
           </Button>
+          </DialogClose>
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? 'Registrando...' : 'Registrar Despesa'}
           </Button>

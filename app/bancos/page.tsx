@@ -12,6 +12,17 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -20,13 +31,24 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Building2 } from 'lucide-react';
-import { useBancos } from '@/lib/hooks/use-bancos';
+import { Plus, Building2, Trash2 } from 'lucide-react';
+import { useBancos, useDeleteBanco } from '@/lib/hooks/use-bancos';
 import { NovoBancoForm } from '@/components/forms/novo-banco-form';
+import { toast } from 'sonner';
 
 export default function BancosPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { data: bancos, isLoading } = useBancos();
+  const deleteBanco = useDeleteBanco()
+
+  const handleDelete = async (id: number, nome: string) => {
+    try {
+      await deleteBanco.mutateAsync(id);
+      toast.success(`Banco "${nome}" excluído com sucesso!`);
+    } catch (error) {
+      // Erro já tratado pelo interceptor
+    }
+  };
 
   if (isLoading) {
     return (
@@ -104,6 +126,37 @@ export default function BancosPage() {
                       <TableCell>{banco.nome}</TableCell>
                       <TableCell>
                         <Badge variant="outline">{banco.tipo}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end space-x-2">
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Confirmar exclusão
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Tem certeza que deseja excluir esse banco "{banco.nome}"?
+                                  Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDelete(banco.id, banco.nome)}
+                                  disabled={deleteBanco.isPending}
+                                >
+                                  {deleteBanco.isPending ? 'Excluindo...' : 'Excluir'}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

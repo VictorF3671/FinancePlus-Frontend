@@ -15,6 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useCreateBanco } from '@/lib/hooks/use-bancos';
 import { toast } from 'sonner';
+import { DialogClose } from '@radix-ui/react-dialog';
 
 const formSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
@@ -25,9 +26,10 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface NovoBancoFormProps {
   onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
-export function NovoBancoForm({ onSuccess }: NovoBancoFormProps) {
+export function NovoBancoForm({ onSuccess, onCancel }: NovoBancoFormProps) {
   const createBanco = useCreateBanco();
 
   const form = useForm<FormValues>({
@@ -81,13 +83,16 @@ export function NovoBancoForm({ onSuccess }: NovoBancoFormProps) {
         />
 
         <div className="flex justify-end space-x-2">
+          <DialogClose asChild>
           <Button
             type="button"
             variant="outline"
-            onClick={() => form.reset()}
+            onClick={() => {form.reset(); onCancel?.() }}
+            
           >
             Cancelar
           </Button>
+          </DialogClose>
           <Button type="submit" disabled={createBanco.isPending}>
             {createBanco.isPending ? 'Criando...' : 'Criar Banco'}
           </Button>

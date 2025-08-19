@@ -24,3 +24,15 @@ export function useCreateBanco() {
     },
   });
 }
+
+export function useDeleteBanco() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number): Promise<void> => {
+      await api.delete(`/BancoResponsavel/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bancos'] });
+    },
+  });
+}

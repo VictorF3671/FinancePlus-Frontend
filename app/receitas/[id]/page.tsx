@@ -5,38 +5,40 @@ import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Plus, TrendingUp, TrendingDown } from 'lucide-react';
-import { useReceita } from '@/lib/hooks/use-receitas';
+import { ArrowLeft, Plus, TrendingUp, TrendingDown, Pencil, Trash2 } from 'lucide-react';
+import { useReceita, useDeleteValorDiario, useDeleteDespesa } from '@/lib/hooks/use-receitas';
 import { ValorDiarioForm } from '@/components/forms/valor-diario-form';
 import { DespesaForm } from '@/components/forms/despesa-form';
 import { formatDate } from '@/lib/date';
 import { formatCurrency } from '@/lib/currency';
+import { toast } from 'sonner';
+import { EditDespesaDialog } from '@/components/forms/edit-despesa-form';
+import { EditValorDiarioDialog } from '@/components/forms/edit-valor-diario-form';
 
 export default function ReceitaDetailPage() {
   const params = useParams();
   const router = useRouter();
   const receitaId = Number(params.id);
+
   const [valorDialogOpen, setValorDialogOpen] = useState(false);
   const [despesaDialogOpen, setDespesaDialogOpen] = useState(false);
-  
+
   const { data: receita, isLoading } = useReceita(receitaId);
+
+  // mutations de delete
+  const delValor = useDeleteValorDiario(receitaId);
+  const delDesp = useDeleteDespesa(receitaId);
 
   if (isLoading) {
     return (
@@ -60,19 +62,23 @@ export default function ReceitaDetailPage() {
     );
   }
 
-  const totalValores = receita.valoresDiarios.reduce((acc, valor) => acc + valor.valor, 0);
-  const totalDespesas = receita.despesas.reduce((acc, despesa) => acc + despesa.valor, 0);
+  // ordenação cronológica (crescente)
+  const valoresOrdenados = [...receita.valoresDiarios].sort(
+    (a, b) => new Date(a.data).getTime() - new Date(b.data).getTime()
+  );
+  const despesasOrdenadas = [...receita.despesas].sort(
+    (a, b) => new Date(a.data).getTime() - new Date(b.data).getTime()
+  );
+
+  const totalValores = valoresOrdenados.reduce((acc, v) => acc + v.valor, 0);
+  const totalDespesas = despesasOrdenadas.reduce((acc, d) => acc + d.valor, 0);
   const saldo = totalValores - totalDespesas;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.push('/receitas')}
-          >
+          <Button variant="outline" size="sm" onClick={() => router.push('/receitas')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
           </Button>
@@ -83,9 +89,7 @@ export default function ReceitaDetailPage() {
             </p>
           </div>
         </div>
-        <Badge variant="secondary">
-          {receita.bancoResponsavelNome}
-        </Badge>
+        <Badge variant="secondary">{receita.bancoResponsavelNome}</Badge>
       </div>
 
       {/* Resumo Financeiro */}
@@ -96,12 +100,8 @@ export default function ReceitaDetailPage() {
             <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(totalValores)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {receita.valoresDiarios.length} registro(s)
-            </p>
+            <div className="text-2xl font-bold text-green-600">{formatCurrency(totalValores)}</div>
+            <p className="text-xs text-muted-foreground">{valoresOrdenados.length} registro(s)</p>
           </CardContent>
         </Card>
 
@@ -111,12 +111,8 @@ export default function ReceitaDetailPage() {
             <TrendingDown className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {formatCurrency(totalDespesas)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {receita.despesas.length} registro(s)
-            </p>
+            <div className="text-2xl font-bold text-red-600">{formatCurrency(totalDespesas)}</div>
+            <p className="text-xs text-muted-foreground">{despesasOrdenadas.length} registro(s)</p>
           </CardContent>
         </Card>
 
@@ -128,9 +124,7 @@ export default function ReceitaDetailPage() {
             <div className={`text-2xl font-bold ${saldo >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {formatCurrency(saldo)}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Valores - Despesas
-            </p>
+            <p className="text-xs text-muted-foreground">Valores - Despesas</p>
           </CardContent>
         </Card>
       </div>
@@ -141,15 +135,14 @@ export default function ReceitaDetailPage() {
           <TabsTrigger value="despesas">Despesas</TabsTrigger>
         </TabsList>
 
+        {/* VALORES */}
         <TabsContent value="valores">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Valores Diários</CardTitle>
-                  <CardDescription>
-                    Registros de valores recebidos por dia
-                  </CardDescription>
+                  <CardDescription>Registros de valores recebidos por dia</CardDescription>
                 </div>
                 <Dialog open={valorDialogOpen} onOpenChange={setValorDialogOpen}>
                   <DialogTrigger asChild>
@@ -161,20 +154,15 @@ export default function ReceitaDetailPage() {
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Registrar Valor Diário</DialogTitle>
-                      <DialogDescription>
-                        Registre um novo valor recebido para esta receita
-                      </DialogDescription>
+                      <DialogDescription>Registre um novo valor recebido para esta receita</DialogDescription>
                     </DialogHeader>
-                    <ValorDiarioForm
-                      receitaId={receitaId}
-                      onSuccess={() => setValorDialogOpen(false)}
-                    />
+                    <ValorDiarioForm receitaId={receitaId} onSuccess={() => setValorDialogOpen(false)} />
                   </DialogContent>
                 </Dialog>
               </div>
             </CardHeader>
             <CardContent>
-              {!receita.valoresDiarios.length ? (
+              {!valoresOrdenados.length ? (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">Nenhum valor registrado</p>
                 </div>
@@ -186,19 +174,63 @@ export default function ReceitaDetailPage() {
                         <TableHead>Data</TableHead>
                         <TableHead>Observação</TableHead>
                         <TableHead className="text-right">Valor</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {receita.valoresDiarios.map((valor) => (
+                      {valoresOrdenados.map((valor) => (
                         <TableRow key={valor.id}>
                           <TableCell>{formatDate(valor.data)}</TableCell>
-                          <TableCell>
-                            {valor.observacao || (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </TableCell>
+                          <TableCell>{valor.observacao || <span className="text-muted-foreground">-</span>}</TableCell>
                           <TableCell className="text-right font-medium text-green-600">
                             {formatCurrency(valor.valor)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              {/* Editar (dialog único) */}
+                              <EditValorDiarioDialog
+                                mode="edit"
+                                receitaId={receitaId}
+                                initialValues={{
+                                  id: valor.id,
+                                  data: valor.data,
+                                  observacao: valor.observacao ?? '',
+                                  valor: valor.valor,
+                                }}
+                                trigger={
+                                  <Button variant="outline" size="sm">
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                }
+                              />
+
+                              {/* Excluir */}
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="outline" size="sm">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir valor diário</AlertDialogTitle>
+                                    <AlertDialogDescription>Essa ação não pode ser desfeita.</AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={async () => {
+                                        await delValor.mutateAsync(valor.id);
+                                        toast.success('Valor diário excluído!');
+                                      }}
+                                      disabled={delValor.isPending}
+                                    >
+                                      {delValor.isPending ? 'Excluindo...' : 'Excluir'}
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -210,15 +242,14 @@ export default function ReceitaDetailPage() {
           </Card>
         </TabsContent>
 
+        {/* DESPESAS */}
         <TabsContent value="despesas">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Despesas</CardTitle>
-                  <CardDescription>
-                    Despesas associadas a esta receita
-                  </CardDescription>
+                  <CardDescription>Despesas associadas a esta receita</CardDescription>
                 </div>
                 <Dialog open={despesaDialogOpen} onOpenChange={setDespesaDialogOpen}>
                   <DialogTrigger asChild>
@@ -230,22 +261,17 @@ export default function ReceitaDetailPage() {
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Registrar Despesa</DialogTitle>
-                      <DialogDescription>
-                        Registre uma nova despesa associada a esta receita
-                      </DialogDescription>
+                      <DialogDescription>Registre uma nova despesa</DialogDescription>
                     </DialogHeader>
-                    <DespesaForm
-                      receitaId={receitaId}
-                      onSuccess={() => setDespesaDialogOpen(false)}
-                    />
+                    <DespesaForm receitaId={receitaId} onSuccess={() => setDespesaDialogOpen(false)} />
                   </DialogContent>
                 </Dialog>
               </div>
             </CardHeader>
             <CardContent>
-              {!receita.despesas.length ? (
+              {!despesasOrdenadas.length ? (
                 <div className="text-center py-8">
-                  <p className="text-muted-foreground">Nenhuma despesa registrada</p>
+                  <p className="text-muted-foreground">Nenhuma despesa registrado</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -255,15 +281,63 @@ export default function ReceitaDetailPage() {
                         <TableHead>Data</TableHead>
                         <TableHead>Descrição</TableHead>
                         <TableHead className="text-right">Valor</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {receita.despesas.map((despesa) => (
+                      {despesasOrdenadas.map((despesa) => (
                         <TableRow key={despesa.id}>
                           <TableCell>{formatDate(despesa.data)}</TableCell>
                           <TableCell>{despesa.descricao}</TableCell>
                           <TableCell className="text-right font-medium text-red-600">
                             {formatCurrency(despesa.valor)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              {/* Editar (dialog único) */}
+                              <EditDespesaDialog
+                                mode="edit"
+                                receitaId={receitaId}
+                                initialValues={{
+                                  id: despesa.id,
+                                  data: despesa.data,
+                                  descricao: despesa.descricao,
+                                  valor: despesa.valor,
+                                }}
+                                trigger={
+                                  <Button variant="outline" size="sm">
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                }
+                              />
+
+                              {/* Excluir */}
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="outline" size="sm">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir despesa</AlertDialogTitle>
+                                    <AlertDialogDescription>Essa ação não pode ser desfeita.</AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={async () => {
+                                        await delDesp.mutateAsync(despesa.id);
+                                        toast.success('Despesa excluída!');
+                                      }}
+                                      disabled={delDesp.isPending}
+                                    >
+                                      {delDesp.isPending ? 'Excluindo...' : 'Excluir'}
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
