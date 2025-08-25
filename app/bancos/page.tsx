@@ -35,6 +35,7 @@ import { Plus, Building2, Trash2 } from 'lucide-react';
 import { useBancos, useDeleteBanco } from '@/lib/hooks/use-bancos';
 import { NovoBancoForm } from '@/components/forms/novo-banco-form';
 import { toast } from 'sonner';
+import { VideoLoader } from '@/components/providers/video-loader';
 
 export default function BancosPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -51,17 +52,23 @@ export default function BancosPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Bancos</h1>
+      return (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold">Receitas</h1>
+          </div>
+  
+          <div className="h-64 flex items-center justify-center bg-muted rounded-lg">
+            <VideoLoader
+              open
+              src="/loader-amigo.mp4" 
+              size={96}
+              label="Ativando Servidores, espere um pouquinho (por favor)"
+            />
+          </div>
         </div>
-        <div className="animate-pulse">
-          <div className="h-64 bg-muted rounded-lg"></div>
-        </div>
-      </div>
-    );
-  }
+      );
+    }
 
   return (
     <div className="space-y-6">

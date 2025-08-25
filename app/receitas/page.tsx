@@ -37,6 +37,7 @@ import { useReceitas, useDeleteReceita } from '@/lib/hooks/use-receitas';
 import { NovaReceitaForm } from '@/components/forms/nova-receita-form';
 import { formatDate } from '@/lib/date';
 import { toast } from 'sonner';
+import { VideoLoader } from '@/components/providers/video-loader';
 
 export default function ReceitasPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -64,8 +65,14 @@ export default function ReceitasPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Receitas</h1>
         </div>
-        <div className="animate-pulse">
-          <div className="h-64 bg-muted rounded-lg"></div>
+
+        <div className="h-64 flex items-center justify-center bg-muted rounded-lg">
+          <VideoLoader
+            open
+            src="/loader-amigo.mp4" 
+            size={96}
+            label="Ativando Servidores, espere um pouquinho (por favor)"
+          />
         </div>
       </div>
     );
