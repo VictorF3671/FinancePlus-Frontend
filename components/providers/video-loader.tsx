@@ -4,7 +4,7 @@ import clsx from 'clsx';
 
 type VideoLoaderProps = {
   open: boolean;
-  src: string;              // exemplo: "/loader-amigo.mp4"
+  src: string;             
   label?: string;
   size?: number;
   fullscreen?: boolean;

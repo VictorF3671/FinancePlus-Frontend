@@ -5,6 +5,7 @@ import { Header } from '@/components/layout/header';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { QueryProvider } from '@/components/providers/query-provider';
 import { Toaster } from '@/components/ui/sonner';
+import { Analytics } from "@vercel/analytics/next"
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -30,6 +31,7 @@ export default function RootLayout({
           <QueryProvider>
             <div className="min-h-screen bg-background">
               <Header />
+              <Analytics/>
               <main className="container mx-auto py-6 px-4">
                 {children}
               </main>
