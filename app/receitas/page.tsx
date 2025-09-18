@@ -69,7 +69,7 @@ export default function ReceitasPage() {
         <div className="h-64 flex items-center justify-center bg-muted rounded-lg">
           <VideoLoader
             open
-            src="/loader-amigo.mp4" 
+            src="/new-loader.mp4" 
             size={96}
             label="Ativando Servidores, espere um pouquinho (por favor)"
           />
