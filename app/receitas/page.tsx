@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -32,12 +33,17 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Eye, Trash2 } from 'lucide-react';
+import { Plus, Eye, Trash2, RefreshCcw } from 'lucide-react';
 import { useReceitas, useDeleteReceita } from '@/lib/hooks/use-receitas';
+import { useTotalValorDiario } from '@/lib/hooks/use-total-valor-diario';
 import { NovaReceitaForm } from '@/components/forms/nova-receita-form';
 import { formatDate } from '@/lib/date';
 import { toast } from 'sonner';
 import { VideoLoader } from '@/components/providers/video-loader';
+
+function formatBRL(value: number) {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value ?? 0);
+}
 
 export default function ReceitasPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -45,13 +51,13 @@ export default function ReceitasPage() {
   const { data: receitas, isLoading } = useReceitas();
   const deleteReceita = useDeleteReceita();
 
+  const { data: total, isLoading: isTotalLoading, error: totalError, isFetching, refetch } = useTotalValorDiario();
+
   const handleDelete = async (id: number, nome: string) => {
     try {
       await deleteReceita.mutateAsync(id);
       toast.success(`Receita "${nome}" excluída com sucesso!`);
-    } catch (error) {
-      // Erro já tratado pelo interceptor
-    }
+    } catch {}
   };
 
   const truncateText = (text: string, maxLength: number = 50) => {
@@ -69,9 +75,9 @@ export default function ReceitasPage() {
         <div className="h-64 flex items-center justify-center bg-muted rounded-lg">
           <VideoLoader
             open
-            src="/new-loader.mp4" 
+            src="/new-loader.mp4"
             size={96}
-            label="Ativando Servidores, espere só um pouco (por favor)"
+            label="Ativando Servidores, espere um pouquinho (por favor)"
           />
         </div>
       </div>
@@ -101,17 +107,39 @@ export default function ReceitasPage() {
                 Crie uma nova receita para gerenciar valores diários e despesas
               </DialogDescription>
             </DialogHeader>
-            <NovaReceitaForm onSuccess={() => setDialogOpen(false)} 
-  onCancel={() => setDialogOpen(false)} />
+            <NovaReceitaForm onSuccess={() => setDialogOpen(false)} onCancel={() => setDialogOpen(false)} />
           </DialogContent>
         </Dialog>
+      </div>
+
+      <div className="w-full flex justify-center">
+        <Card className="w-full max-w-xl">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total arrecadado</CardTitle>
+            <RefreshCcw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} onClick={() => refetch()} />
+          </CardHeader>
+          <CardContent className="text-center">
+            {isTotalLoading ? (
+              <div className="text-muted-foreground text-3xl md:text-4xl font-bold">...</div>
+            ) : totalError ? (
+              <div className="text-red-600 text-sm">Erro ao carregar o total</div>
+            ) : (
+              <div className="space-y-1">
+                <div className="text-3xl md:text-4xl font-bold text-green-600">{formatBRL(total ?? 0)}</div>
+                <p className="text-xs text-muted-foreground">
+                  {isFetching ? 'Atualizando…' : 'Atualizado automaticamente a cada 30s'}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Lista de Receitas</CardTitle>
           <CardDescription>
-            {receitas?.length || 0} receita(s) cadastrada(s)
+            {receitas?.length ?? 0} receita(s) cadastrada(s)
           </CardDescription>
         </CardHeader>
         <CardContent>
