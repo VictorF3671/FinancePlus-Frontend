@@ -71,7 +71,7 @@ export default function ReceitasPage() {
             open
             src="/new-loader.mp4" 
             size={96}
-            label="Ativando Servidores, espere um pouquinho (por favor)"
+            label="Ativando Servidores, espere só um pouco (por favor)"
           />
         </div>
       </div>
