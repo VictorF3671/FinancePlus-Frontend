@@ -2,7 +2,7 @@ import axios from 'axios';
 import { toast } from 'sonner';
 
 const api = axios.create({
-  baseURL: 'https://financeplus-backend.onrender.com',
+  baseURL: 'https://localhost:7172',
   headers: {
     'Content-Type': 'application/json',
   },
