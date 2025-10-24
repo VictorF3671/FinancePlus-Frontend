@@ -8,7 +8,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { Analytics } from '@vercel/analytics/react';
 
 const inter = Inter({ subsets: ['latin'] });
-
+ 
 export const metadata: Metadata = {
   title: 'Finance+ Ielune',
   description: 'Sistema de gestão financeira',
