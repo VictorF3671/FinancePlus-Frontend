@@ -1,9 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
+import { signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
-import { Moon, Sun, DollarSign } from 'lucide-react';
+import { Moon, Sun, DollarSign, LogOut } from 'lucide-react';
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -11,9 +14,21 @@ import {
   NavigationMenuLink,
   navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
+import { clearStoredRole } from '@/lib/roles';
 
 export function Header() {
   const { theme, setTheme } = useTheme();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      clearStoredRole();
+      router.replace('/login');
+    } catch (e) {
+      console.error('Erro ao deslogar:', e);
+    }
+  };
 
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -52,10 +67,18 @@ export function Header() {
             <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
             <span className="sr-only">Alternar tema</span>
           </Button>
+
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleLogout}
+            title="Sair"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
-      {/* Mobile Navigation */}
       <div className="border-t md:hidden">
         <nav className="flex justify-center space-x-8 py-2">
           <Link
